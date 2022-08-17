@@ -5,6 +5,7 @@ from .serializers import rentSerializer
 from .models import rent
 from .serializers import userSerializer
 from .models import user
+from django.shortcuts import get_object_or_404
 
 ################################RentAPI######################################
 class rentViews(APIView):
@@ -25,6 +26,20 @@ class rentViews(APIView):
         items = rent.objects.all()
         serializer = rentSerializer(items, many=True)
         return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+
+    def patch(self, request, id=None):
+        item = rent.objects.get(id=id)
+        serializer = rentSerializer(item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "success", "data": serializer.data})
+        else:
+            return Response({"status": "error", "data": serializer.errors})
+
+    def delete(self, request, id=None):
+        item = get_object_or_404(rent, id=id)
+        item.delete()
+        return Response({"status": "success", "data": "Item Deleted"})
 ###############################UserAPI#######################################
 class userViews(APIView):
     def post(self, request):
@@ -44,3 +59,17 @@ class userViews(APIView):
         items = user.objects.all()
         serializer = userSerializer(items, many=True)
         return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+
+    def patch(self, request, id=None):
+        item = user.objects.get(id=id)
+        serializer = userSerializer(item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "success", "data": serializer.data})
+        else:
+            return Response({"status": "error", "data": serializer.errors})
+
+    def delete(self, request, id=None):
+        item = get_object_or_404(user, id=id)
+        item.delete()
+        return Response({"status": "success", "data": "Item Deleted"})
