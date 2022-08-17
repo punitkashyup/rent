@@ -19,13 +19,15 @@ from django import forms
 
 
 class user(models.Model):
+    id=models.IntegerField(primary_key=True)
     user_name = models.CharField(max_length=20, unique=True)
     user_email = models.EmailField(max_length=200)
     user_password = models.CharField(max_length=200)
 
 
 class rent(models.Model):
-    rent_date = models.DateField(default=Date.today)
+    id=models.IntegerField(primary_key=True)
+    rent_date = models.DateField(auto_now_add=True)
     rentmonth = models.CharField(max_length=30)
     # rentmonth = models.CharField(max_length=2, choices=MONTH_CHOICES)
     rent_amount = models.FloatField()
