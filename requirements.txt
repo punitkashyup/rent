@@ -1,0 +1,6 @@
+djangorestframework
+knox
+django-rest-knox
+cryptography
+Jinja2
+boto3
