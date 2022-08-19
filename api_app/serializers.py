@@ -1,13 +1,11 @@
 from rest_framework import serializers
 from .models import rent
-from .models import user
-from rest_framework.validators import UniqueValidator
+from django.contrib.auth.models import User
 
 class rentSerializer(serializers.ModelSerializer):
-    id=serializers.PrimaryKeyRelatedField(read_only=True)
+    # id=serializers.PrimaryKeyRelatedField(read_only=True)
     rent_date = serializers.DateField(format="%d-%m-%Y", read_only=True)
     rentmonth = serializers.CharField()
-    # rentmonth = serializers.CharField(source='get_rentmonth_display')
     rent_amount = serializers.FloatField()
     bijli_bill = serializers.FloatField()
     other_amount = serializers.FloatField()
@@ -17,12 +15,20 @@ class rentSerializer(serializers.ModelSerializer):
         model = rent
         fields = ('__all__')
 
-class userSerializer(serializers.ModelSerializer):
-    id=serializers.PrimaryKeyRelatedField(read_only=True)
-    user_name = serializers.CharField(max_length=20, validators=[UniqueValidator(queryset=user.objects.all())])
-    user_email = serializers.EmailField(max_length=None, min_length=None, allow_blank=False)
-    user_password = serializers.CharField(max_length=200, style={'input_type': 'password'})
-
+# User Serializer
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = user
-        fields = ('__all__')
+        model = User
+        fields = ('id', 'username', 'email')
+
+# Register Serializer
+class RegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password')
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = User.objects.create_user(validated_data['username'], validated_data['email'], validated_data['password'])
+
+        return user

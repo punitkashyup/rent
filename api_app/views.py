@@ -3,9 +3,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import rentSerializer
 from .models import rent
-from .serializers import userSerializer
-from .models import user
 from django.shortcuts import get_object_or_404
+
+from rest_framework import generics
+from rest_framework.response import Response
+from knox.models import AuthToken
+from .serializers import UserSerializer, RegisterSerializer
+
+from django.contrib.auth import login
+from rest_framework import permissions
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from knox.views import LoginView as KnoxLoginView
 
 ################################RentAPI######################################
 class rentViews(APIView):
@@ -41,35 +49,27 @@ class rentViews(APIView):
         item.delete()
         return Response({"status": "success", "data": "Item Deleted"})
 ###############################UserAPI#######################################
-class userViews(APIView):
-    def post(self, request):
-        serializer = userSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
-        else:
-            return Response({"status": "error", "data": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-    def get(self, request, id=None):
-        if id:
-            item = user.objects.get(id=id)
-            serializer = userSerializer(item)
-            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+# Register API
+class RegisterAPI(generics.GenericAPIView):
+    serializer_class = RegisterSerializer
 
-        items = user.objects.all()
-        serializer = userSerializer(items, many=True)
-        return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+        "user": UserSerializer(user, context=self.get_serializer_context()).data,
+        "token": AuthToken.objects.create(user)[1]
+        })
 
-    def patch(self, request, id=None):
-        item = user.objects.get(id=id)
-        serializer = userSerializer(item, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success", "data": serializer.data})
-        else:
-            return Response({"status": "error", "data": serializer.errors})
+# Login API
+class LoginAPI(KnoxLoginView):
+    permission_classes = (permissions.AllowAny,)
 
-    def delete(self, request, id=None):
-        item = get_object_or_404(user, id=id)
-        item.delete()
-        return Response({"status": "success", "data": "Item Deleted"})
+    def post(self, request, format=None):
+        serializer = AuthTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        login(request, user)
+        return super(LoginAPI, self).post(request, format=None)
